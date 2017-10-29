@@ -1,14 +1,17 @@
 import Foundation
 
 struct Sudoku {
-    var matrix: [[Int]]
+    let solutionMatrix: [[Int]]
+    var workingMatrix: [[Int]]
 
-    init(matrix: [[Int]]) {
-        self.matrix = matrix
+    init(matrix: [[Int]], percent: Float = 0.44) {
+        self.solutionMatrix = matrix
+        self.workingMatrix = matrix
+        self.clear(percent: percent)
     }
     
-    init(size: Int) {
-        matrix = [[Int]]()
+    init(size: Int, percent: Float = 0.44) {
+        var matrix = [[Int]]()
 
         for row in 0..<size {
             var thisRow = [Int]()
@@ -52,21 +55,48 @@ struct Sudoku {
             }
             matrix.append(thisRow)
         }
+        
+        self.solutionMatrix = matrix
+        self.workingMatrix = matrix
+        self.clear(percent: percent)
     }
     
-    mutating func clean(percent: Float = 0.44) {
+    internal mutating func clear(percent: Float) {
+        let size = workingMatrix.count
+        let square = 3
         
+        for row in stride(from: 0, to: size, by: square) {
+            for col in stride(from: 0, to: size, by: square) {
+                let rowLenght = row+square > size ? size-row : square
+                let colLenght = col+square > size ? size-col : square
+                let squareSize = rowLenght * colLenght
+                let toHide = Int(Float(squareSize) * percent)
+                var hidePositions = [Int]()
+                for _ in 0..<toHide {
+                    var candidate = Int(arc4random_uniform(UInt32(squareSize)))
+                    while hidePositions.contains(candidate) {
+                        candidate = Int(arc4random_uniform(UInt32(squareSize)))
+                    }
+                    hidePositions.append(candidate)
+                }
+             
+                for posToHide in hidePositions {
+                    let rowToHide = row + (posToHide / colLenght)
+                    let colToHide = col + (posToHide % colLenght)
+                    workingMatrix[rowToHide][colToHide] = 0
+                }
+            }
+        }
     }
 
-    func check() {
-        
-    }
-    
-    func display() {
-        matrix.map{$0.map{String($0)}.joined(separator: " ")}.forEach{print($0)}
+    func display(solution: Bool = false) {
+        let matrix = solution ? solutionMatrix : workingMatrix
+        matrix.map{$0.map{$0 > 0 ? String($0) : " "}.joined(separator: " ")}.forEach{print($0)}
     }
 }
 
-var s = Sudoku(size: 9)
+var s = Sudoku(size: 9, percent: 0.5)
 s.display()
+print("")
+s.display(solution: true)
 
