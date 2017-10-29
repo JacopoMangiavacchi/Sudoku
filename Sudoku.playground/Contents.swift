@@ -1,7 +1,7 @@
 import Foundation
 
 struct Sudoku {
-    let solutionMatrix: [[Int]]
+    private(set) var solutionMatrix: [[Int]]
     private(set) var initialMatrix: [[Int]]
     var workingMatrix: [[Int]]
     
@@ -15,50 +15,15 @@ struct Sudoku {
     }
     
     init(size: Int, percent: Float = 0.44) {
-        var matrix = [[Int]]()
+        let matrix = [[Int]](repeating: [Int](repeating: 0, count: size), count: size)
         
-        for row in 0..<size {
-            var thisRow = [Int]()
-            var colsCandidateUsedPerThisRow = [[Int]](repeating: [Int](), count: size)
-            while thisRow.count < size {
-                let col = thisRow.count
-                
-                var thisCol = [Int]()
-                for r in 0..<row {
-                    thisCol.append(matrix[r][col])
-                }
-                
-                var rowsCandidateUsed = thisRow
-                for c in colsCandidateUsedPerThisRow[col] {
-                    rowsCandidateUsed.append(c)
-                }
-                
-                for c in thisCol {
-                    if !rowsCandidateUsed.contains(c) {
-                        rowsCandidateUsed.append(c)
-                    }
-                }
-                
-                if rowsCandidateUsed.count < size {
-                    var candidate = Int(arc4random_uniform(UInt32(size))+1)
-                    while rowsCandidateUsed.contains(candidate) {
-                        candidate = Int(arc4random_uniform(UInt32(size))+1)
-                    }
-                    thisRow.append(candidate)
-                }
-                else {
-                    let last = thisRow.removeLast()
-                    colsCandidateUsedPerThisRow[col].removeAll()
-                    colsCandidateUsedPerThisRow[col-1].append(last)
-                }
-            }
-            matrix.append(thisRow)
-        }
-        
+        self.workingMatrix = matrix
         self.solutionMatrix = matrix
         self.initialMatrix = matrix
-        self.workingMatrix = matrix
+        self.solve()
+        self.solutionMatrix = workingMatrix
         self.clear(percent: percent)
+        self.initialMatrix = workingMatrix
     }
     
     internal mutating func clear(percent: Float) {
@@ -235,10 +200,10 @@ struct Sudoku {
 var s = Sudoku(size: 9, percent: 0.5)
 s.display()
 print("")
-//s.display(.initial)
-//print("")
-//s.display(.working)
-//print("")
+s.display(.initial)
+print("")
+s.display(.working)
+print("")
 print(s.solve())
 print("")
 s.display(.working)
