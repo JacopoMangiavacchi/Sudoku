@@ -5,22 +5,13 @@ struct Sudoku {
     private(set) var initialMatrix: [[Int]]
     var workingMatrix: [[Int]]
     
-    init(matrix: [[Int]], percent: Float = 0.44) {
-        self.solutionMatrix = matrix
-        self.initialMatrix = matrix
-        self.workingMatrix = matrix
-        if self.solve() {
-            self.clear(percent: percent)
-        }
-    }
-    
     init(size: Int, percent: Float = 0.44) {
         let matrix = [[Int]](repeating: [Int](repeating: 0, count: size), count: size)
         
         self.workingMatrix = matrix
         self.solutionMatrix = matrix
         self.initialMatrix = matrix
-        self.solve()
+        self.solve(random: true)
         self.solutionMatrix = workingMatrix
         self.clear(percent: percent)
         self.initialMatrix = workingMatrix
@@ -56,7 +47,7 @@ struct Sudoku {
         self.initialMatrix = workingMatrix
     }
     
-    mutating func solve() -> Bool {
+    mutating func solve(random: Bool = false) -> Bool {
         let size = workingMatrix.count
         guard size > 0 && (workingMatrix.map{$0.count}.filter{$0 == size}.count == size) else { return false }
         
@@ -99,19 +90,32 @@ struct Sudoku {
                     }
                     
                     if rowsCandidateUsed.count < size {
-                        var candidate = Int(arc4random_uniform(UInt32(size))+1)
-                        while rowsCandidateUsed.contains(candidate) {
+                        var candidate = 0
+                        if random {
                             candidate = Int(arc4random_uniform(UInt32(size))+1)
+                            while rowsCandidateUsed.contains(candidate) {
+                                candidate = Int(arc4random_uniform(UInt32(size))+1)
+                            }
+                        }
+                        else {
+                            rowsCandidateUsed.sort()
+                            
+                            for potentialCandidate in rowsCandidateUsed {
+                                if potentialCandidate - candidate > 1 {
+                                    break
+                                }
+                                candidate = potentialCandidate
+                            }
+                            
+                            candidate += 1
                         }
                         
                         thisRow.append(candidate)
                     }
                     else {
                         if col > 0 {
-                            //print("3 r=\(row) c=\(col) row=\(thisRow) working=\(workingMatrix[row]) candidates=\(rowsCandidateUsed)")
                             for c in stride(from: col, to: 0, by: -1) {
                                 let last = thisRow.removeLast()
-                                //print("    remove \(last) from col \(c)")
                                 candidateMatrix[row][c].removeAll()
                                 candidateMatrix[row][c-1].append(last)
                                 
@@ -126,17 +130,13 @@ struct Sudoku {
                         }
                         
                         if col == 0 && row > 0 {
-                            //print("1 r=\(row) c=\(col) row=\(thisRow) working=\(workingMatrix[row]) candidates=\(rowsCandidateUsed)")
-                            
                             candidateMatrix[row] = [[Int]](repeating: [Int](), count: size)
                             thisRow = solvedMatrix.removeLast()
                             row -= 1
                             col = size - 1
-                            //print("2 r=\(row) c=\(col) row=\(thisRow) working=\(workingMatrix[row])")
                             
                             for c in stride(from: col, to: 0, by: -1) {
                                 let last = thisRow.removeLast()
-                                //print(" remove \(last) from col \(c)")
                                 candidateMatrix[row][c].append(last)
                                 
                                 if workingMatrix[row][c] == 0 {
@@ -197,14 +197,30 @@ struct Sudoku {
     }
 }
 
+var startTime = CFAbsoluteTimeGetCurrent()
 var s = Sudoku(size: 9, percent: 0.5)
-s.display()
-print("")
-s.display(.initial)
-print("")
-s.display(.working)
-print("")
-print(s.solve())
-print("")
-s.display(.working)
+var timeElapsed = CFAbsoluteTimeGetCurrent() - startTime
+print("Time elapsed for Generating: \(timeElapsed) s.")
+
+//s.display()
+//print("")
+//s.display(.initial)
+//print("")
+//s.display(.working)
+//print("")
+
+let backup = s.workingMatrix
+startTime = CFAbsoluteTimeGetCurrent()
+print(s.solve(random: false))
+timeElapsed = CFAbsoluteTimeGetCurrent() - startTime
+print("Time elapsed for Solving Sequential: \(timeElapsed) s.")
+
+s.workingMatrix = backup
+startTime = CFAbsoluteTimeGetCurrent()
+print(s.solve(random: true))
+timeElapsed = CFAbsoluteTimeGetCurrent() - startTime
+print("Time elapsed for Solving Random: \(timeElapsed) s.")
+
+//print("")
+//s.display(.working)
 
