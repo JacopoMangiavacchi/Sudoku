@@ -34,85 +34,6 @@ struct Sudoku {
         }
     }
     
-    internal mutating func clear(percent: Float) {
-        let size = workingMatrix.count
-        let base = Int(sqrt(Double(size)))
-        let square = 3
-        
-        for row in stride(from: 0, to: base, by: square) {
-            for col in stride(from: 0, to: base, by: square) {
-                let rowLenght = row+square > base ? base-row : square
-                let colLenght = col+square > base ? base-col : square
-                let squareSize = rowLenght * colLenght
-                let toHide = Int(Float(squareSize) * percent)
-                var hidePositions = [Int]()
-                for _ in 0..<toHide {
-                    var candidate = Int(arc4random_uniform(UInt32(squareSize)))
-                    while hidePositions.contains(candidate) {
-                        candidate = Int(arc4random_uniform(UInt32(squareSize)))
-                    }
-                    hidePositions.append(candidate)
-                }
-                
-                for posToHide in hidePositions {
-                    let rowToHide = row + (posToHide / colLenght)
-                    let colToHide = col + (posToHide % colLenght)
-                    
-                    workingMatrix[(rowToHide*base) + colToHide]
-                }
-            }
-        }
-        
-        self.initialMatrix = workingMatrix
-    }
-    
-    internal func checkInArray(_ candidate: Int, array: [Int]) -> Bool {
-        for v in array {
-            if v == candidate {
-                return true
-            }
-        }
-        
-        return false
-    }
-    
-    func checkCandidate(_ candidate: Int, position: Int, base: Int, solvedMatrix: [Int]) -> Bool {
-        let row = position / base
-        let col = position - (row * base)
-        
-        var rowValues = [Int]()
-        var colValues = [Int]()
-        var squareValues = [Int]()
-        
-        for c in 0..<base {
-            let p = (row * base) + c
-            if workingMatrix[p] > 0 {
-                rowValues.append(workingMatrix[p])
-            }
-            else if solvedMatrix[p] > 0 {
-                rowValues.append(solvedMatrix[p])
-            }
-        }
-
-        for r in 0..<base {
-            let p = (r * base) + col
-            if workingMatrix[p] > 0 {
-                colValues.append(workingMatrix[p])
-            }
-            else if solvedMatrix[p] > 0 {
-                colValues.append(solvedMatrix[p])
-            }
-        }
-        
-        //TODO: squareValues
-        
-        if checkInArray(candidate, array: rowValues) || checkInArray(candidate, array: colValues) || checkInArray(candidate, array: squareValues) {
-            return false
-        }
-        
-        return true
-    }
-    
     mutating func solve(random: Bool = false) -> Bool {
         let size = workingMatrix.count
         guard size > 0 else { return false }
@@ -178,7 +99,43 @@ struct Sudoku {
         return true
     }
     
-    
+    func checkCandidate(_ candidate: Int, position: Int, base: Int, solvedMatrix: [Int]) -> Bool {
+        let row = position / base
+        let col = position - (row * base)
+        
+        var rowValues = [Int]()
+        var colValues = [Int]()
+        var squareValues = [Int]()
+        
+        for c in 0..<base {
+            let p = (row * base) + c
+            if workingMatrix[p] > 0 {
+                rowValues.append(workingMatrix[p])
+            }
+            else if solvedMatrix[p] > 0 {
+                rowValues.append(solvedMatrix[p])
+            }
+        }
+        
+        for r in 0..<base {
+            let p = (r * base) + col
+            if workingMatrix[p] > 0 {
+                colValues.append(workingMatrix[p])
+            }
+            else if solvedMatrix[p] > 0 {
+                colValues.append(solvedMatrix[p])
+            }
+        }
+        
+        //TODO: squareValues
+        
+        if checkInArray(candidate, array: rowValues) || checkInArray(candidate, array: colValues) || checkInArray(candidate, array: squareValues) {
+            return false
+        }
+        
+        return true
+    }
+
     enum KindOfMatrix {
         case solution
         case initial
@@ -197,9 +154,51 @@ struct Sudoku {
             matrix = workingMatrix
         }
         
-        matrix.eachSlice(Int(sqrt(Double(matrix.count)))).map{$0.map{$0 > 0 ? String($0) : "?"}.joined(separator: " ")}.forEach{print($0)}
+        matrix.eachSlice(Int(sqrt(Double(matrix.count)))).map{$0.map{$0 > 0 ? String($0) : " "}.joined(separator: " ")}.forEach{print($0)}
+    }
+    
+    internal func checkInArray(_ candidate: Int, array: [Int]) -> Bool {
+        for v in array {
+            if v == candidate {
+                return true
+            }
+        }
+        
+        return false
+    }
+    
+    internal mutating func clear(percent: Float) {
+        let base = Int(sqrt(Double(workingMatrix.count)))
+        let square = 3
+        
+        for row in stride(from: 0, to: base, by: square) {
+            for col in stride(from: 0, to: base, by: square) {
+                let rowLenght = row+square > base ? base-row : square
+                let colLenght = col+square > base ? base-col : square
+                let squareSize = rowLenght * colLenght
+                let toHide = Int(Float(squareSize) * percent)
+                var hidePositions = [Int]()
+                for _ in 0..<toHide {
+                    var candidate = Int(arc4random_uniform(UInt32(squareSize)))
+                    while hidePositions.contains(candidate) {
+                        candidate = Int(arc4random_uniform(UInt32(squareSize)))
+                    }
+                    hidePositions.append(candidate)
+                }
+                
+                for posToHide in hidePositions {
+                    let rowToHide = row + (posToHide / colLenght)
+                    let colToHide = col + (posToHide % colLenght)
+                    
+                    workingMatrix[(rowToHide*base) + colToHide] = 0
+                }
+            }
+        }
+        
+        self.initialMatrix = workingMatrix
     }
 }
+
 
 var startTime = CFAbsoluteTimeGetCurrent()
 var s = Sudoku(base: 9, percent: 0.5)
