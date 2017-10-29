@@ -2,10 +2,12 @@ import Foundation
 
 struct Sudoku {
     let solutionMatrix: [[Int]]
+    private(set) var initialMatrix: [[Int]]
     var workingMatrix: [[Int]]
 
     init(matrix: [[Int]], percent: Float = 0.44) {
         self.solutionMatrix = matrix
+        self.initialMatrix = matrix
         self.workingMatrix = matrix
         self.clear(percent: percent)
     }
@@ -57,6 +59,7 @@ struct Sudoku {
         }
         
         self.solutionMatrix = matrix
+        self.initialMatrix = matrix
         self.workingMatrix = matrix
         self.clear(percent: percent)
     }
@@ -87,10 +90,29 @@ struct Sudoku {
                 }
             }
         }
+        
+        self.initialMatrix = workingMatrix
     }
 
-    func display(solution: Bool = false) {
-        let matrix = solution ? solutionMatrix : workingMatrix
+    
+    enum KindOfMatrix {
+        case solution
+        case initial
+        case working
+    }
+    
+    func display(_ kindOfMatrix: KindOfMatrix = .solution) {
+        var matrix: [[Int]]!
+        
+        switch(kindOfMatrix) {
+        case .solution:
+            matrix = solutionMatrix
+        case .initial:
+            matrix = initialMatrix
+        case .working:
+            matrix = workingMatrix
+        }
+
         matrix.map{$0.map{$0 > 0 ? String($0) : " "}.joined(separator: " ")}.forEach{print($0)}
     }
 }
@@ -98,5 +120,7 @@ struct Sudoku {
 var s = Sudoku(size: 9, percent: 0.5)
 s.display()
 print("")
-s.display(solution: true)
+s.display(.initial)
+print("")
+s.display(.working)
 
