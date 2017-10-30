@@ -127,7 +127,23 @@ struct Sudoku {
             }
         }
         
-        //TODO: squareValues
+        let square = 3
+        let xSquare = row / square
+        let ySquare = col / square
+        for r in 0..<square {
+            for c in 0..<square {
+                let realSquareRow = (xSquare * square) + r
+                let realSquareCol = (ySquare * square) + c
+                
+                let p = (realSquareRow * base) + realSquareCol
+                if workingMatrix[p] > 0 {
+                    squareValues.append(workingMatrix[p])
+                }
+                else if solvedMatrix[p] > 0 {
+                    squareValues.append(solvedMatrix[p])
+                }
+            }
+        }
         
         if checkInArray(candidate, array: rowValues) || checkInArray(candidate, array: colValues) || checkInArray(candidate, array: squareValues) {
             return false
