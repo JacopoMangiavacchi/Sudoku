@@ -40,7 +40,7 @@ struct Sudoku {
         let base = Int(sqrt(Double(size)))
         
         var candidateMatrix: [[Int]] = [[Int]](repeating: [Int](), count: size) // if random array of candidate used - else 1 only element is the last candidate used
-        var solvedMatrix: [Int] = [Int](repeating: 0, count: size)
+        var solvedMatrix = workingMatrix
         
         var pos = 0
         while pos < size {
@@ -73,7 +73,9 @@ struct Sudoku {
                 
                 if candidate == 0 {
                     repeat {
-                        solvedMatrix[pos] = 0
+                        if workingMatrix[pos] == 0 {
+                            solvedMatrix[pos] = 0
+                        }
                         candidateMatrix[pos] = [Int]()
                         pos -= 1
                     }
@@ -84,9 +86,14 @@ struct Sudoku {
                         return false
                     }
                 }
-                else if checkCandidate(candidate, position: pos, base: base, solvedMatrix: solvedMatrix) {
+                else {
                     solvedMatrix[pos] = candidate
-                    pos += 1
+                    if checkCandidate(candidate, position: pos, base: base, solvedMatrix: solvedMatrix) {
+                        pos += 1
+                    }
+                    else {
+                        solvedMatrix[pos] = 0
+                    }
                 }
             }
             else {
@@ -103,49 +110,19 @@ struct Sudoku {
         let row = position / base
         let col = position - (row * base)
         
-        var rowValues = [Int]()
-        var colValues = [Int]()
-        var squareValues = [Int]()
-        
-        for c in 0..<base {
-            let p = (row * base) + c
-            if workingMatrix[p] > 0 {
-                rowValues.append(workingMatrix[p])
-            }
-            else if solvedMatrix[p] > 0 {
-                rowValues.append(solvedMatrix[p])
-            }
-        }
-        
-        for r in 0..<base {
-            let p = (r * base) + col
-            if workingMatrix[p] > 0 {
-                colValues.append(workingMatrix[p])
-            }
-            else if solvedMatrix[p] > 0 {
-                colValues.append(solvedMatrix[p])
-            }
-        }
+        let pHorizontal = row * base
+        let pVertical = col
         
         let square = 3
         let xSquare = row / square
         let ySquare = col / square
-        for r in 0..<square {
-            for c in 0..<square {
-                let realSquareRow = (xSquare * square) + r
-                let realSquareCol = (ySquare * square) + c
-                
-                let p = (realSquareRow * base) + realSquareCol
-                if workingMatrix[p] > 0 {
-                    squareValues.append(workingMatrix[p])
-                }
-                else if solvedMatrix[p] > 0 {
-                    squareValues.append(solvedMatrix[p])
-                }
-            }
-        }
-        
-        if checkInArray(candidate, array: rowValues) || checkInArray(candidate, array: colValues) || checkInArray(candidate, array: squareValues) {
+        let realSquareRow = xSquare * square
+        let realSquareCol = ySquare * square
+        let pSquare = (realSquareRow * base) + realSquareCol
+
+        if checkInArea(candidate, position: pHorizontal, length: base,   loop: 1,       base: base, solvedMatrix: solvedMatrix) ||  // horizontal
+           checkInArea(candidate, position: pVertical,   length: 1,      loop: base,    base: base, solvedMatrix: solvedMatrix) ||  // vertical
+           checkInArea(candidate, position: pSquare,     length: square, loop: square,  base: base, solvedMatrix: solvedMatrix) {   // square
             return false
         }
         
@@ -173,11 +150,22 @@ struct Sudoku {
         matrix.eachSlice(Int(sqrt(Double(matrix.count)))).map{$0.map{$0 > 0 ? String($0) : " "}.joined(separator: " ")}.forEach{print($0)}
     }
     
-    internal func checkInArray(_ candidate: Int, array: [Int]) -> Bool {
-        for v in array {
-            if v == candidate {
-                return true
+
+    internal func checkInArea(_ candidate: Int, position: Int, length: Int, loop: Int, base: Int, solvedMatrix: [Int]) -> Bool {
+        var found = false
+        var pos = position
+        for _ in 0..<loop {
+            for _ in 0..<length {
+                if solvedMatrix[pos] == candidate {
+                    if found {
+                        return true
+                    }
+                    found = true
+                }
+                pos += 1
             }
+            pos -= length
+            pos += base
         }
         
         return false
